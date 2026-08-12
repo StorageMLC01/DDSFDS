@@ -1,130 +1,118 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8">
-    <title>Makiiverse - Wii U SVG</title>
-    <style>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Makiiverse - Wii U Retro Devkit</title>
+    <style type="text/css">
         body {
             background-color: #f4f1eb;
-            font-family: sans-serif;
+            font-family: Arial, sans-serif;
             text-align: center;
-            padding-top: 50px;
+            padding-top: 40px;
         }
-        .container {
-            display: inline-block;
-            background: white;
+        .contenedor {
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
             padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #ccc;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 300px;
+            margin: 0 auto;
+            border-radius: 8px;
         }
-        input[type="text"] {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            width: 200px;
+        input {
+            padding: 8px;
+            font-size: 14px;
+            width: 90%;
+            margin-bottom: 10px;
         }
         button {
-            padding: 11px 20px;
+            padding: 10px 20px;
             font-size: 16px;
             background-color: #71cc00;
-            color: white;
+            color: #ffffff;
             border: none;
-            border-radius: 6px;
-            cursor: pointer;
             font-weight: bold;
-            margin-left: 5px;
+            cursor: pointer;
+            border-radius: 4px;
         }
-        button:hover {
-            background-color: #5ea800;
-        }
-        #miiContenedor {
-            margin-top: 25px;
-            width: 140px;
-            height: 140px;
-            margin-left: auto;
-            margin-right: auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            /* Borde de carga para diagnóstico */
-            border: 2px dashed #ddd;
-            border-radius: 50%;
-            overflow: hidden; /* Importante para que el SVG no se salga */
-        }
-        /* Estilo para el elemento SVG que insertaremos */
-        #miiContenedor svg {
-            width: 100%;
-            height: 100%;
-            /* Forzamos el renderizado para pantallas viejas */
-            image-rendering: optimizeSpeed;
-        }
-        #estado {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #888;
+        #espacioMii {
+            margin-top: 20px;
+            min-height: 140px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Makiiverse (Wii U Fix)</h2>
-        <input type="text" id="idInput" value="YosMakii99_PN" placeholder="Tu PNID">
-        <button onclick="cargarMiiSVG()">Generar Mii</button>
+    <div class="contenedor">
+        <h2>Makiiverse (NetFront Fix)</h2>
         
-        <div id="miiContenedor">
-            <!-- Aquí inyectaremos el código SVG directamente -->
+        <input type="text" id="inputUsuario" value="YosMakii99_PN" />
+        <br />
+        <button onclick="renderizarMiiRetro()">Cargar Mii</button>
+        
+        <div id="espacioMii">
+            <p style="color:#888; font-size:12px;">Esperando usuario...</p>
         </div>
-        <div id="estado">Esperando...</div>
     </div>
 
-    <script>
-        function cargarMiiSVG() {
-            var id = document.getElementById('idInput').value;
-            var contenedor = document.getElementById('miiContenedor');
-            var estado = document.getElementById('estado');
+    <script type="text/javascript">
+        function renderizarMiiRetro() {
+            var input = document.getElementById("inputUsuario");
+            var contenedor = document.getElementById("espacioMii");
             
-            // Limpieza de espacios
-            id = id.replace(/^\s+|\s+$/g, '');
-
-            if (id === "") {
-                alert("Por favor ingresa un PNID.");
+            // Limpieza de espacios (metodo compatible con 2010)
+            var usuario = input.value.replace(/^\s+|\s+$/g, '');
+            
+            if (usuario === "") {
+                alert("Por favor, escribe un PNID.");
                 return;
             }
 
-            estado.innerText = "Conectando vía SVG...";
+            // Estado de carga inicial
+            contenedor.innerHTML = "<p style='color:#666;'>Procesando...</p>";
+
+            // 1. Construimos los parametros de la API (api_id=1 es para Pretendo)
+            var parametros = "?nnid=" + encodeURIComponent(usuario) + "&type=face&width=270&api_id=1";
             
-            // !!! CLAVE AQUÍ: Solicitamos el formato SVG en lugar de PNG !!!
-            // Esto evita los problemas de seguridad de imagen remota en la Wii U.
-            var urlSVG = "https://mii-unsecure.ariankordi.net/miis/image.svg?nnid=" + encodeURIComponent(id) + "&type=face&width=270&api_id=1";
+            // 2. Usamos HTTP INSEGURO para evitar el rechazo de certificados del navegador viejo
+            var urlHttp = "http://mii-unsecure.ariankordi.net/miis/image.png" + parametros;
             
-            // Usamos `fetch` para descargar el código del SVG como texto
-            fetch(urlSVG)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error en la red');
-                    }
-                    return response.text(); // Obtenemos el SVG como texto XML
-                })
-                .then(svgText => {
-                    // Validamos que sea un SVG real
-                    if (!svgText.includes('<svg')) {
-                        throw new Error('La respuesta no es un SVG válido');
-                    }
-                    
-                    // Inyectamos el código SVG directamente en el DOM
-                    contenedor.innerHTML = svgText;
-                    estado.innerText = "¡Mii renderizado correctamente! (SVG)";
-                    contenedor.style.border = "none"; // Quitamos el borde de carga
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    contenedor.innerHTML = '<p style="color:red; font-size:12px;">Error cargando Mii</p>';
-                    estado.innerText = "Fallo al cargar el SVG. Revisa el PNID.";
-                    contenedor.style.border = "2px dashed red";
-                });
+            // 3. Tambien preparamos el HTTPS por si GitHub Pages fuerza el bloqueo de contenido mixto
+            var urlHttps = "https://mii-unsecure.ariankordi.net/miis/image.png" + parametros;
+
+            // Creamos el elemento de imagen a la antigua
+            var imagenMii = document.createElement("img");
+            imagenMii.setAttribute("width", "140");
+            imagenMii.setAttribute("height", "140");
+            imagenMii.setAttribute("alt", "Mii");
+
+            // Evento cuando la imagen carga bien
+            imagenMii.onload = function() {
+                contenedor.innerHTML = "";
+                contenedor.appendChild(imagenMii);
+            };
+
+            // Evento por si el HTTP falla (ej. GitHub bloquea contenido inseguro)
+            // Intentamos cargar por HTTPS como plan de respaldo
+            imagenMii.onerror = function() {
+                var imagenFallback = document.createElement("img");
+                imagenFallback.setAttribute("width", "140");
+                imagenFallback.setAttribute("height", "140");
+                
+                imagenFallback.onload = function() {
+                    contenedor.innerHTML = "";
+                    contenedor.appendChild(imagenFallback);
+                };
+                
+                imagenFallback.onerror = function() {
+                    contenedor.innerHTML = "<p style='color:red;'>El navegador de Wii U rechazo la conexion (SSL/CORS).</p>";
+                };
+                
+                // Disparamos el segundo intento
+                imagenFallback.src = urlHttps;
+            };
+
+            // Disparamos el primer intento (HTTP inseguro)
+            imagenMii.src = urlHttp;
         }
     </script>
 
