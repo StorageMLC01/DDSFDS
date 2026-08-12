@@ -1,26 +1,132 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
-    <title>Makiiverse - GitHub Pages</title>
+    <title>Makiiverse - Wii U SVG</title>
+    <style>
+        body {
+            background-color: #f4f1eb;
+            font-family: sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .container {
+            display: inline-block;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 200px;
+        }
+        button {
+            padding: 11px 20px;
+            font-size: 16px;
+            background-color: #71cc00;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        button:hover {
+            background-color: #5ea800;
+        }
+        #miiContenedor {
+            margin-top: 25px;
+            width: 140px;
+            height: 140px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Borde de carga para diagnóstico */
+            border: 2px dashed #ddd;
+            border-radius: 50%;
+            overflow: hidden; /* Importante para que el SVG no se salga */
+        }
+        /* Estilo para el elemento SVG que insertaremos */
+        #miiContenedor svg {
+            width: 100%;
+            height: 100%;
+            /* Forzamos el renderizado para pantallas viejas */
+            image-rendering: optimizeSpeed;
+        }
+        #estado {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
 </head>
 <body>
-    <h2>Makiiverse - Wii U Version</h2>
-    <input type="text" id="idInput" placeholder="PNID">
-    <button onclick="cargar()">Generar</button>
-    <div id="resultado"></div>
+
+    <div class="container">
+        <h2>Makiiverse (Wii U Fix)</h2>
+        <input type="text" id="idInput" value="YosMakii99_PN" placeholder="Tu PNID">
+        <button onclick="cargarMiiSVG()">Generar Mii</button>
+        
+        <div id="miiContenedor">
+            <!-- Aquí inyectaremos el código SVG directamente -->
+        </div>
+        <div id="estado">Esperando...</div>
+    </div>
 
     <script>
-        function cargar() {
+        function cargarMiiSVG() {
             var id = document.getElementById('idInput').value;
-            var urlArian = "https://mii-unsecure.ariankordi.net/miis/image.png?nnid=" + encodeURIComponent(id) + "&type=face&width=270&api_id=1";
+            var contenedor = document.getElementById('miiContenedor');
+            var estado = document.getElementById('estado');
             
-            // Usamos un servicio de Proxy público para "limpiar" la petición para la Wii U
-            // Esto hace que la imagen venga desde otro lado que la Wii U sí acepta
-            var urlProxy = "https://images.weserv.nl/?url=" + encodeURIComponent(urlArian);
+            // Limpieza de espacios
+            id = id.replace(/^\s+|\s+$/g, '');
+
+            if (id === "") {
+                alert("Por favor ingresa un PNID.");
+                return;
+            }
+
+            estado.innerText = "Conectando vía SVG...";
             
-            document.getElementById('resultado').innerHTML = '<img src="' + urlProxy + '" width="140" height="140">';
+            // !!! CLAVE AQUÍ: Solicitamos el formato SVG en lugar de PNG !!!
+            // Esto evita los problemas de seguridad de imagen remota en la Wii U.
+            var urlSVG = "https://mii-unsecure.ariankordi.net/miis/image.svg?nnid=" + encodeURIComponent(id) + "&type=face&width=270&api_id=1";
+            
+            // Usamos `fetch` para descargar el código del SVG como texto
+            fetch(urlSVG)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la red');
+                    }
+                    return response.text(); // Obtenemos el SVG como texto XML
+                })
+                .then(svgText => {
+                    // Validamos que sea un SVG real
+                    if (!svgText.includes('<svg')) {
+                        throw new Error('La respuesta no es un SVG válido');
+                    }
+                    
+                    // Inyectamos el código SVG directamente en el DOM
+                    contenedor.innerHTML = svgText;
+                    estado.innerText = "¡Mii renderizado correctamente! (SVG)";
+                    contenedor.style.border = "none"; // Quitamos el borde de carga
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    contenedor.innerHTML = '<p style="color:red; font-size:12px;">Error cargando Mii</p>';
+                    estado.innerText = "Fallo al cargar el SVG. Revisa el PNID.";
+                    contenedor.style.border = "2px dashed red";
+                });
         }
     </script>
+
 </body>
 </html>
