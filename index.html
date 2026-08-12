@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Makiiverse - GitHub Pages</title>
+</head>
+<body>
+    <h2>Makiiverse - Wii U Version</h2>
+    <input type="text" id="idInput" placeholder="PNID">
+    <button onclick="cargar()">Generar</button>
+    <div id="resultado"></div>
+
+    <script>
+        function cargar() {
+            var id = document.getElementById('idInput').value;
+            var urlArian = "https://mii-unsecure.ariankordi.net/miis/image.png?nnid=" + encodeURIComponent(id) + "&type=face&width=270&api_id=1";
+            
+            // Usamos un servicio de Proxy público para "limpiar" la petición para la Wii U
+            // Esto hace que la imagen venga desde otro lado que la Wii U sí acepta
+            var urlProxy = "https://images.weserv.nl/?url=" + encodeURIComponent(urlArian);
+            
+            document.getElementById('resultado').innerHTML = '<img src="' + urlProxy + '" width="140" height="140">';
+        }
+    </script>
+</body>
+</html>
